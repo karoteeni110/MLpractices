@@ -3,16 +3,24 @@ nltk.download('inaugural')
 from nltk.corpus import inaugural, stopwords
 from nltk.util import ngrams 
 from collections import defaultdict, Counter
-import random
+from random import shuffle
 
 def random_vec(dim=100):
-    return [random.random() for _ in range(dim)]
+    vec = [1.0] * 5 + [0.0] * (dim-5)
+    shuffle(vec)
+    return vec
  
 def get_word_vecs():
-    """ word_vecs['target']['context']
+    """ word_vecs[]
     """
-    middle_pos = len(n_   grams[0]) // 2
-
+    initial_vecs = defaultdict()
+    for word in vocab:
+        initial_vecs[word] = random_vec()
+        
+    middle_pos = len(n_grams[0]) // 2
+    word_vecs = Counter(int)
+    for window in n_grams:
+        target = window[middle_pos]
 
 
 if __name__ == "__main__":
