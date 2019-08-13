@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity, cosine_distances
 from nltk.stem import WordNetLemmatizer
 
-DIM = 10
+DIM = 100
 
 def random_vec(dim=DIM):
     vec = np.zeros(DIM, dtype=int)
@@ -56,7 +56,7 @@ def mostsimilar(word, most = 10):
     print()
 
 def random_similarwords(examples=10):
-    for i in range(examples):
+    for _ in range(examples):
         word = choice(list(vec_dict.keys()))
         mostsimilar(word)
 
