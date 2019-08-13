@@ -72,8 +72,11 @@ if __name__ == "__main__":
     vocab = set(word for sent in filtered_sents for word in sent)
     vec_dict = get_word_vecs()
 
-    mostsimilar('good')
-
-    random_similarwords(examples=10)
+    mostsimilar('demoralizes')
+    print(for i in vec_dict['demoralizes'])
+    for sent in filtered_sents:
+        if 'demoralizes' in sent:
+            print(sent)
+    # random_similarwords(examples=10)
 
 
