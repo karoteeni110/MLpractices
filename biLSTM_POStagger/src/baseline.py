@@ -1,4 +1,5 @@
-"""A biLSTM POS tagger. Reproducing the work from Plank et al. (2016)"""
+"""Reproducing the work from Plank et al. (2016)
+BASELINE biLSTM tagger, using only word embeddings"""
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
