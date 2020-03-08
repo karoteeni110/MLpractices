@@ -5,6 +5,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
+# from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,read_ud
+
 torch.manual_seed(1)
 
 #--- hyperparameters ---
@@ -19,8 +21,8 @@ def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
-# def prepare_data_cell():
-training_data = [
+training_data = dict()
+training_data['eng'] = [
     ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
     ("Everybody read that book".split(), ["NN", "V", "DET", "NN"])
 ]
@@ -31,7 +33,6 @@ for sent, tags in training_data:
             word_to_ix[word] = len(word_to_ix)
 print(word_to_ix)
 tag_to_ix = {"DET": 0, "NN": 1, "V": 2}
-    # return tag_to_ix
 
 
 class LSTMTagger(nn.Module):
