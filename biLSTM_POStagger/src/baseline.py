@@ -10,11 +10,12 @@ import torch.optim as optim
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-N_EPOCHS = 16
-LEARNING_RATE = 0.005
+N_EPOCHS = 20
+LEARNING_RATE = 0.1
 REPORT_EVERY = 5
-EMBEDDING_DIM = 30
-HIDDEN_DIM = 20
+EMBEDDING_DIM = 128
+HIDDEN_DIM = 100
+HIDDEN_NOISE_SIGMA = 0.2 
 BATCH_SIZE = 1
 
 def prepare_sequence(seq, to_ix):
@@ -51,22 +52,28 @@ class LSTMTagger(nn.Module):
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
+        # Var[aX+b]= (a**2) * Var[X]
+        sigma = 0.2
+        a = torch.sqrt(torch.tensor(sigma))
+        return (a*torch.randn([2,1,self.hidden_dim]),
+                a*torch.randn([2,1,self.hidden_dim]))
+        
         # Before we've done anything, we dont have any hidden state.
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
-        return (torch.zeros(2, 1, self.hidden_dim),
-                torch.zeros(2, 1, self.hidden_dim))
+        # (torch.zeros(2, 1, self.hidden_dim),
+        #        torch.zeros(2, 1, self.hidden_dim))
 
     def forward(self, sentence):
         embeds = self.word_embeddings(sentence)
         lstm_out, self.hidden = self.bilstm(
             embeds.view(len(sentence), 1, -1), self.hidden)
         tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
-        return F.log_softmax(tag_space, dim=1)
+        return tag_space # F.log_softmax(tag_space, dim=1)
 
 if __name__ == "__main__":
 
     model = LSTMTagger(EMBEDDING_DIM, HIDDEN_DIM, len(word_to_ix), len(tag_to_ix))
-    loss_function = nn.NLLLoss()
+    loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # See what the scores are before training
