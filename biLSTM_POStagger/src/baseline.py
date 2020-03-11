@@ -29,16 +29,16 @@ def get_word_tensor(seq, to_ix, use=True):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
-def get_byte_tensor(seq, to_ix, use=True):
+def get_char_tensor(seq, to_ix, use=True):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
     idxs = [to_ix[c] for w in seq for c in w]
     return torch.tensor(idxs, dtype=torch.long)
 
-def get_char_tensor(seq, to_ix, use=True):
+def get_byte_tensor(seq, to_ix, use=True):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [to_ix[w] for w in seq for c in w for b in list(c.encode())]
+    idxs = [to_ix[b] for w in seq for c in w for b in list(c.encode())]
     return torch.tensor(idxs, dtype=torch.long)
         
 class LSTMTagger(nn.Module):
@@ -76,9 +76,10 @@ class LSTMTagger(nn.Module):
                 a*torch.randn([2,1,self.hidden_dim]))
 
     def forward(self, word_x, char_x, byte_x, sent_len):
-        word_embeds = self.word_embeddings(word_x)
-        char_embeds = self.char_embeddings(char_x)
-        byte_embeds = self.byte_embeddings(byte_x)
+        # TODO: concat embeddings
+        word_embeds = self.word_embeddings(word_x).view(1,-1)
+        char_embeds = self.char_embeddings(char_x).mean(dim=0).view(1,-1)
+        byte_embeds = self.byte_embeddings(byte_x).mean(dim=0).view(1,-1)
         embeds = []
         for emb in [word_embeds,char_embeds,byte_embeds]:
             if 0 not in emb.size():

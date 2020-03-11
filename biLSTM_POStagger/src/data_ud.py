@@ -84,14 +84,13 @@ def read_conllu(filename):
                 tag_stack.append(rand_line[4])
     return data
 
-
 # training_data = [
 #     ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
 #     ("Everybody read that book".split(), ["NN", "V", "DET", "NN"])
 # ]
 training_data = read_conllu(TRAIN_FPATH)
-# test_data = read_conllu(TEST_FPATH)
-# dev_data = read_conllu(DEV_FPATH)
+test_data = read_conllu(TEST_FPATH)
+dev_data = read_conllu(DEV_FPATH)
 
 word_to_ix = get_word2ix(training_data)
 byte_to_ix, char_to_ix = get_byte2ix(training_data), get_char2ix(training_data)
@@ -100,5 +99,6 @@ tag_to_logfreq = get_tag2logfreq(training_data) #{"DET": logfreq(3), "NN": logfr
 
 if __name__=="__main__":
     # Check that we don't crash on reading.
-    pass
+    print(tag_to_ix)
+    exit(0)
 
