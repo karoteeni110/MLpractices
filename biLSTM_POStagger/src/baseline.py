@@ -13,7 +13,7 @@ torch.manual_seed(1)
 #--- hyperparameters ---
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = False 
+USE_CHAR_EMB = True 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
@@ -23,11 +23,22 @@ LEARNING_RATE = 0.1
 REPORT_EVERY = 5
 HIDDEN_DIM = 100
 
-def prepare_sequence(seq, to_ix, use=True):
+def get_word_tensor(seq, to_ix, use=True):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-
     idxs = [to_ix[w] for w in seq]
+    return torch.tensor(idxs, dtype=torch.long)
+
+def get_byte_tensor(seq, to_ix, use=True):
+    if not use:
+        return torch.LongTensor([]).repeat(len(seq),0)
+    idxs = [to_ix[c] for w in seq for c in w]
+    return torch.tensor(idxs, dtype=torch.long)
+
+def get_char_tensor(seq, to_ix, use=True):
+    if not use:
+        return torch.LongTensor([]).repeat(len(seq),0)
+    idxs = [to_ix[w] for w in seq for c in w for b in list(c.encode())]
     return torch.tensor(idxs, dtype=torch.long)
         
 class LSTMTagger(nn.Module):
@@ -90,9 +101,9 @@ if __name__ == "__main__":
     # Note that element i,j of the output is the score for tag j for word i.
     with torch.no_grad():
         sentence = training_data[0][0]
-        word_inputs = prepare_sequence(sentence, word_to_ix, use=USE_WORD_EMB)
-        byte_inputs = prepare_sequence(sentence, byte_to_ix, use=USE_BYTE_EMB)
-        char_inputs = prepare_sequence(sentence, char_to_ix, use=USE_CHAR_EMB)
+        word_inputs = get_word_tensor(sentence, word_to_ix, use=USE_WORD_EMB)
+        byte_inputs = get_byte_tensor(sentence, byte_to_ix, use=USE_BYTE_EMB)
+        char_inputs = get_char_tensor(sentence, char_to_ix, use=USE_CHAR_EMB)
         tag_scores = model(word_inputs,char_inputs,byte_inputs,len(sentence))
         print(tag_scores)
 
@@ -106,10 +117,10 @@ if __name__ == "__main__":
 
             # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
-            word_inputs = prepare_sequence(sentence, word_to_ix, use=USE_WORD_EMB)
-            byte_inputs = prepare_sequence(sentence, byte_to_ix, use=USE_BYTE_EMB)
-            char_inputs = prepare_sequence(sentence, char_to_ix, use=USE_CHAR_EMB)
-            targets = prepare_sequence(tags, tag_to_ix)
+            word_inputs = get_word_tensor(sentence, word_to_ix, use=USE_WORD_EMB)
+            byte_inputs = get_byte_tensor(sentence, byte_to_ix, use=USE_BYTE_EMB)
+            char_inputs = get_char_tensor(sentence, char_to_ix, use=USE_CHAR_EMB)
+            targets = get_word_tensor(tags, tag_to_ix)
 
             tag_scores = model(word_inputs,char_inputs,byte_inputs,len(sentence))        
             loss = loss_function(tag_scores, targets)
@@ -119,9 +130,9 @@ if __name__ == "__main__":
     # See what the scores are after training
     with torch.no_grad():
         sent_in = training_data[0][0]
-        word_inputs = prepare_sequence(sent_in, word_to_ix, use=USE_WORD_EMB)
-        byte_inputs = prepare_sequence(sent_in, byte_to_ix, use=USE_BYTE_EMB)
-        char_inputs = prepare_sequence(sent_in, char_to_ix, use=USE_CHAR_EMB)
+        word_inputs = get_word_tensor(sent_in, word_to_ix, use=USE_WORD_EMB)
+        byte_inputs = get_byte_tensor(sent_in, byte_to_ix, use=USE_BYTE_EMB)
+        char_inputs = get_char_tensor(sent_in, char_to_ix, use=USE_CHAR_EMB)
         tag_scores = model(word_inputs,byte_inputs,char_inputs,len(sent_in))
 
         # "the dog ate the apple", DET NOUN VERB DET NOUN
