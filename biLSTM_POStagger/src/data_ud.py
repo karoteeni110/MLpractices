@@ -4,24 +4,16 @@ from os import listdir
 
 DATAHEADER = ['BODY','POS']
 
-training_data = [
-    ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
-    ("Everybody read that book".split(), ["NN", "V", "DET", "NN"])
-]
-
-print(word_to_ix)
-tag_to_ix = {"DET": 0, "NN": 1, "V": 2}
-tag_to_logfreq = {"DET": logfreq(3), "NN": logfreq(4), "V": logfreq(2)}
-
 def logfreq(freq):
     return int(math.log(freq))
 
-def add_word_to_ix():
+def get_word2ix(training_data):
     word_to_ix = {}
-    for sent, tags in training_data:
+    for sent, _ in training_data:
         for word in sent:
             if word not in word_to_ix:
                 word_to_ix[word] = len(word_to_ix)
+    return word_to_ix
 
 def read_conllu(filename):
     """
@@ -46,6 +38,17 @@ def read_ud_datasets(data_dir):
     for data_set in ['test', 'dev', 'train']:
         data[data_set] = read_conllu("%s/tdt-ud-%s.conllu" % (data_dir,data_set)) 
     return data
+
+training_data = [
+    ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
+    ("Everybody read that book".split(), ["NN", "V", "DET", "NN"])
+]
+word_to_ix = get_word2ix(training_data)
+# print(word_to_ix)
+byte_to_ix,char_to_ix = {}, {}
+tag_to_ix = {"DET": 0, "NN": 1, "V": 2}
+tag_to_logfreq = {"DET": logfreq(3), "NN": logfreq(4), "V": logfreq(2)}
+
 
 if __name__=="__main__":
     # Check that we don't crash on reading.
