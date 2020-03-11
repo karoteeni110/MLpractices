@@ -5,46 +5,38 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 
-# from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,read_ud
+from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,read_ud
 
 torch.manual_seed(1)
 
 #--- hyperparameters ---
+EMBED_LEVEL = ['word','byte','char']
 N_EPOCHS = 20
 LEARNING_RATE = 0.1
 REPORT_EVERY = 5
-EMBEDDING_DIM = 128
 HIDDEN_DIM = 100
-HIDDEN_NOISE_SIGMA = 0.2 
-BATCH_SIZE = 1
 
 def prepare_sequence(seq, to_ix):
     idxs = [to_ix[w] for w in seq]
     return torch.tensor(idxs, dtype=torch.long)
 
-training_data = dict()
-training_data['eng'] = [
-    ("The dog ate the apple".split(), ["DET", "NN", "V", "DET", "NN"]),
-    ("Everybody read that book".split(), ["NN", "V", "DET", "NN"])
-]
-word_to_ix = {}
-for sent, tags in training_data:
-    for word in sent:
-        if word not in word_to_ix:
-            word_to_ix[word] = len(word_to_ix)
-print(word_to_ix)
-tag_to_ix = {"DET": 0, "NN": 1, "V": 2}
+# training_data = dict()
+
 
 
 class LSTMTagger(nn.Module):
-    def __init__(self, embedding_dim, hidden_dim, vocab_size, tagset_size):
+    def __init__(self,hidden_dim,word_vocab_size,char_vocab_size,\
+                byte_vocab_size,tagset_size):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
 
-        self.word_embeddings = nn.Embedding(vocab_size, embedding_dim)
-
-        # The LSTM takes word embeddings as inputs, and outputs hidden states
+        self.word_embeddings = nn.Embedding(word_vocab_size,128)
+        self.char_embeddings = nn.Embedding(char_vocab_size,100)
+        self.byte_embeddings = nn.Embedding(byte_vocab_size,100)
+        
+        # The LSTM takes concatenated embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
+        embedding_dim = word_vocab_size + char_vocab_size + byte_vocab_size
         self.bilstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
 
         # The linear layer that maps from hidden state space to tag space
@@ -63,8 +55,11 @@ class LSTMTagger(nn.Module):
         # (torch.zeros(2, 1, self.hidden_dim),
         #        torch.zeros(2, 1, self.hidden_dim))
 
-    def forward(self, sentence):
-        embeds = self.word_embeddings(sentence)
+    def forward(self, word_x, char_x, byte_x):
+        word_embeds = self.word_embeddings(word_x)
+        char_embeds = self.char_embeddings(char_x)
+        byte_embeds = self.byte_embeddings(byte_x)
+        x = torch.cat([word_embeds,char_embeds,byte_embeds])
         lstm_out, self.hidden = self.bilstm(
             embeds.view(len(sentence), 1, -1), self.hidden)
         tag_space = self.hidden2tag(lstm_out.view(len(sentence), -1))
@@ -87,21 +82,17 @@ if __name__ == "__main__":
         for sentence, tags in training_data:
             
             model.zero_grad()
-
             # Clear out the hidden state of the LSTM,
             # detaching it from its history on the last instance.
             model.hidden = model.init_hidden()
 
-            # Step 2. Get our inputs ready for the network, that is, turn them into
+            # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
             sentence_in = prepare_sequence(sentence, word_to_ix)
             targets = prepare_sequence(tags, tag_to_ix)
 
-            # Step 3. Run our forward pass.
             tag_scores = model(sentence_in)
 
-            # Step 4. Compute the loss, gradients, and update the parameters by
-            #  calling optimizer.step()
             loss = loss_function(tag_scores, targets)
             loss.backward()
             optimizer.step()
