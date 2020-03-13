@@ -32,8 +32,9 @@ def get_word_tensor(seq, to_ix, use=True):
 def get_char_tensor(seq, to_ix, use=True):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [to_ix[c] for w in seq for c in w]
-    return torch.tensor(idxs, dtype=torch.long)
+    idxs = [ [to_ix[c] for c in w] for w in seq ]
+    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
+    return idxs
 
 def get_byte_tensor(seq, to_ix, use=True):
     if not use:
@@ -53,13 +54,13 @@ class LSTMTagger(nn.Module):
         
         # The LSTM takes concatenated embeddings as inputs, and outputs hidden states
         # with dimensionality hidden_dim.
-        embedding_dim = 0
+        self.embedding_dim = 0
         if word_vocab_size != 0:
-            embedding_dim += WORD_EMB_DIM
+            self.embedding_dim += WORD_EMB_DIM
         if char_vocab_size != 0:
-            embedding_dim += CHAR_EMB_DIM
+            self.embedding_dim += CHAR_EMB_DIM
         if byte_vocab_size != 0:
-            embedding_dim += BYTE_EMB_DIM
+            self.embedding_dim += BYTE_EMB_DIM
         
         self.bilstm = nn.LSTM(embedding_dim, hidden_dim, bidirectional=True)
 
@@ -77,8 +78,13 @@ class LSTMTagger(nn.Module):
 
     def forward(self, word_x, char_x, byte_x, sent_len):
         # TODO: concat embeddings
-        word_embeds = self.word_embeddings(word_x).view(1,-1)
-        char_embeds = self.char_embeddings(char_x).mean(dim=0).view(1,-1)
+        embeds = torch.randn(sent_len,self.embedding_dim)
+        word_embeds = self.word_embeddings(word_x).view(sent_len,-1)
+        
+        for wordchars in char_x:
+            word_batch_char_embeds = self.char_embeddings(wordchars).mean(dim=0).view(-1,1)
+            char_embeds = torch.cat([char_embeds,word_batch_char_embeds])
+        
         byte_embeds = self.byte_embeddings(byte_x).mean(dim=0).view(1,-1)
         embeds = []
         for emb in [word_embeds,char_embeds,byte_embeds]:
@@ -94,7 +100,8 @@ class LSTMTagger(nn.Module):
 
 if __name__ == "__main__":
 
-    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
+    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),0,len(tag_to_ix))
+    # model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
