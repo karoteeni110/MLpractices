@@ -10,6 +10,7 @@ torch.manual_seed(1)
 LEARNING_RATE = 0.1
 
 class sequenceRNN(nn.Module):
+    """For char, byte embedding"""
     def __init__(self):
         super(sequenceRNN, self).__init__()
     
@@ -17,6 +18,7 @@ class sequenceRNN(nn.Module):
         pass
 
 class contextRNN(nn.Module):
+    """For word embedding"""
     def __init__(self):
         super(contextRNN, self).__init__()
     
