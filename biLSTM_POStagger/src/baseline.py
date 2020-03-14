@@ -16,7 +16,7 @@ torch.manual_seed(1)
 #--- hyperparameters ---
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = False 
+USE_CHAR_EMB = True 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
@@ -37,7 +37,7 @@ def get_char_tensor(seq, to_ix=char_to_ix, use=USE_CHAR_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
     idxs = [ [to_ix[c] for c in w] for w in seq ]
-    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
+    idxs = [ Variable(torch.tensor(w, dtype=torch.long)) for w in idxs ]
     return idxs
 
 def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
@@ -45,7 +45,7 @@ def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
         return torch.LongTensor([]).repeat(len(seq),0)
     # idxs = [ [torch.tensor(to_ix[c],dtype=torch.long) for c in w] for w in seq ]
     idxs = [ [ to_ix[b] for c in w for b in list(c.encode())] for w in seq]
-    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
+    idxs = [ Variable(torch.tensor(w, dtype=torch.long)) for w in idxs ]
     return idxs
         
 class LSTMTagger(nn.Module):
@@ -89,24 +89,26 @@ class LSTMTagger(nn.Module):
     def forward(self, sent):
         # WORD + (char or byte)
         if USE_WORD_EMB:
-            word_emb = self.word_embeddings(Variable(get_word_tensor(sent))).view(len(sent), WORD_EMB_DIM)
+            word_idx = get_word_tensor(sent)
+            word_emb = self.word_embeddings(word_idx).view(len(sent),1,WORD_EMB_DIM)
             # Add seq position information
             i = torch.arange(0, len(sent), dtype=torch.long)
-            word_emb += self.position_emb(i)
-            word_emb = word_emb.view(len(sent), 1, WORD_EMB_DIM)
+            word_emb += self.position_emb(i).view(len(sent),1,WORD_EMB_DIM)
             bilstm_in = word_emb
-            
+
             if USE_CHAR_EMB:
                 final_char_emb = []
                 char_idx = get_char_tensor(sent)
                 for word in char_idx:
-                    char_embeds = self.char_embeddings(Variable(word))
+                    char_embeds = self.char_embeddings(word)
                     lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
                     final_char_emb.append(lstm_char_out[-1])
                 final_char_emb = torch.stack(final_char_emb)
                 
                 bilstm_in = torch.cat((word_emb, final_char_emb), 2)
+                print() #BREAK POINT
             
+            # TODO: char
             if USE_BYTE_EMB:
                 final_byte_emb = []
                 byte_idx = Variable(get_byte_tensor(sent))
@@ -117,37 +119,36 @@ class LSTMTagger(nn.Module):
                 final_byte_emb = torch.stack(final_byte_emb)
                 
                 bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
+                
         
-        # CHAR + BYTE
+        # TODO: CHAR + BYTE
         if USE_CHAR_EMB and USE_BYTE_EMB:
             char_result = []
             char_idx = get_char_tensor(sent,char_to_ix)
             for word in char_idx:
                 char_emb = self.char_embeddings(word)
                 lstm_char_out, self.hidden_char = self.bilstm_char(char_emb.view(len(word), 1, CHAR_EMB_DIM), self.hidden)
-            
+            bilstm = 0
             # bilstm_in = 
         
         # bilstm_in = embeds.view(len(sent),1,self.embedding_dim)
-        lstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
-        tag_space = self.hidden2tag(lstm_out.view(len(sent), -1))
+        bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
+        tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
         return tag_space # F.log_softmax(tag_space, dim=1)
 
 if __name__ == "__main__":
 
     model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),0,len(tag_to_ix))
-    # model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # See what the scores are before training
-    # Note that element i,j of the output is the score for tag j for word i.
     with torch.no_grad():
         sentence = training_data[0][0]
         tag_scores = model(sentence)
         print(tag_scores)
 
-    for epoch in range(N_EPOCHS):  # again, normally you would NOT do 300 epochs, it is toy data
+    for epoch in range(N_EPOCHS):
         total_loss = 0
         for sentence, tags in training_data[:50]:
             
@@ -158,15 +159,16 @@ if __name__ == "__main__":
 
             # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
-            targets = get_word_tensor(tags, tag_to_ix, use=True)
-
+            targets = get_word_tensor(tags, tag_to_ix, use=True) #TODO:
             tag_scores = model(sentence)       
             loss = loss_function(tag_scores, targets)
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
 
-    # See what the scores are after training
+            # TODO: report total loss every REPORT_EVERY
+
+    # TODO: TEST
     with torch.no_grad():
         sent = training_data[0][0]
         tag_scores = model(sent)
