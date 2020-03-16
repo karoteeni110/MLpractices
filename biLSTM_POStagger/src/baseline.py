@@ -84,8 +84,8 @@ class LSTMTagger(nn.Module):
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
         sigma = 0.2
         a = torch.sqrt(torch.tensor(sigma))
-        return (Variable(a*torch.randn([2,1,self.hidden_dim])),
-                Variable(a*torch.randn([2,1,self.hidden_dim])))
+        return (a*torch.randn([2,1,self.hidden_dim]),
+                a*torch.randn([2,1,self.hidden_dim]))
 
     def forward(self, sent):
         # WORD + (char or byte)
@@ -99,10 +99,14 @@ class LSTMTagger(nn.Module):
 
         if USE_CHAR_EMB:
             final_char_emb = []
-            char_idx = get_char_tensor(deepcopy(sent))
-            for word in char_idx:
-                char_embeds = self.char_embeddings(word)
-                lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
+            word = get_char_tensor(sent)[0]
+            # word = char_idx
+            # for word in char_idx:
+            char_embeds = self.char_embeddings(word)
+            a = torch.sqrt(torch.tensor(0.2))
+            x = (a*torch.randn([2,1,self.hidden_dim]),
+                a*torch.randn([2,1,self.hidden_dim]))
+            lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), x)
                 
                 # final_char_emb.append(lstm_char_out[-1])
             # final_char_emb = torch.stack(final_char_emb)
@@ -156,7 +160,7 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
-        for sentence, tags in training_data:
+        for sentence, tags in training_data[:100]:
             
             model.zero_grad()
             # Clear out the hidden state of the LSTM,
