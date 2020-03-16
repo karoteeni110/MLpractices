@@ -18,7 +18,7 @@ torch.manual_seed(1)
 #--- hyperparameters ---
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = True 
+USE_CHAR_EMB = False 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
@@ -181,7 +181,6 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-        # TODO: report total loss every REPORT_EVERY
         print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
 
         if ((epoch+1) % REPORT_EVERY) == 0:
@@ -191,8 +190,10 @@ if __name__ == "__main__":
                   (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
 
     # TODO: TEST
-    with torch.no_grad():
-        sent = training_data[0][0]
-        tag_scores = model(sent)
-        print(tag_scores)
-        print(torch.argmax(tag_scores,dim=1))
+    test_acc, _ = evaluate(test_data, model)
+    print('test acc: %.2f%%' % (test_acc))
+    # with torch.no_grad():
+    #     sent = training_data[0][0]
+    #     tag_scores = model(sent)
+    #     print(tag_scores)
+    #     print(torch.argmax(tag_scores,dim=1))
