@@ -73,7 +73,7 @@ def read_conllu(filename):
     with open(filename, encoding='utf-8') as sefile:
         token_stack, tag_stack = [], []
         add_to_stack = False
-        for line in sefile.readlines()[:300]:
+        for line in sefile.readlines():
             rand_line = line.split()
             if rand_line == []:
                 add_to_stack = False

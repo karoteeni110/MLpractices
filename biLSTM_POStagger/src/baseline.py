@@ -17,10 +17,10 @@ from path import data_path
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-save_modelname = 'fi_c+b.model'
-USE_WORD_EMB = False
+save_modelname = 'fi_auxloss_w.model'
+USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = True 
+USE_CHAR_EMB = False 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
@@ -196,7 +196,7 @@ if __name__ == "__main__":
             loss2 = loss_function(freq_scores, freq_targets)
             loss = loss1 + loss2
             total_loss += loss.item()
-            
+
             loss.backward()
             optimizer.step()
 
