@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+from copy import deepcopy
 
 from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,training_data
 
@@ -24,20 +25,20 @@ CHAR_EMB_DIM = 100
 MAX_SENT_LEN = 200
 N_EPOCHS = 20
 LEARNING_RATE = 0.1
-REPORT_EVERY = 5
+REPORT_EVERY = 1
 HIDDEN_DIM = 100
 
 def get_word_tensor(seq, to_ix=word_to_ix, use=USE_WORD_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
     idxs = [to_ix[w] for w in seq]
-    return Variable(torch.tensor(idxs, dtype=torch.long))
+    return torch.tensor(idxs, dtype=torch.long)
 
 def get_char_tensor(seq, to_ix=char_to_ix, use=USE_CHAR_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
     idxs = [ [to_ix[c] for c in w] for w in seq ]
-    idxs = [ Variable(torch.tensor(w, dtype=torch.long)) for w in idxs ]
+    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
     return idxs
 
 def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
@@ -89,7 +90,7 @@ class LSTMTagger(nn.Module):
     def forward(self, sent):
         # WORD + (char or byte)
         if USE_WORD_EMB:
-            word_idx = get_word_tensor(sent)
+            word_idx = Variable(get_word_tensor(deepcopy(sent)))
             word_emb = self.word_embeddings(word_idx).view(len(sent),1,WORD_EMB_DIM)
             # Add seq position information
             i = torch.arange(0, len(sent), dtype=torch.long)
@@ -98,9 +99,9 @@ class LSTMTagger(nn.Module):
 
             if USE_CHAR_EMB:
                 final_char_emb = []
-                char_idx = get_char_tensor(sent)
+                char_idx = get_char_tensor(deepcopy(sent))
                 for word in char_idx:
-                    char_embeds = self.char_embeddings(word)
+                    char_embeds = self.char_embeddings(Variable(word))
                     lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
                     final_char_emb.append(lstm_char_out[-1])
                 final_char_emb = torch.stack(final_char_emb)
@@ -136,21 +137,24 @@ class LSTMTagger(nn.Module):
         tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
         return tag_space # F.log_softmax(tag_space, dim=1)
 
+def evaluate():
+    pass
+
 if __name__ == "__main__":
 
-    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),0,len(tag_to_ix))
+    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
     # See what the scores are before training
-    with torch.no_grad():
-        sentence = training_data[0][0]
-        tag_scores = model(sentence)
-        print(tag_scores)
+    # with torch.no_grad():
+    #     sentence = training_data[0][0]
+    #     tag_scores = model(sentence)
+    #     print(tag_scores)
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
-        for sentence, tags in training_data[:50]:
+        for sentence, tags in training_data:
             
             model.zero_grad()
             # Clear out the hidden state of the LSTM,
@@ -166,7 +170,14 @@ if __name__ == "__main__":
             loss.backward()
             optimizer.step()
 
-            # TODO: report total loss every REPORT_EVERY
+        # TODO: report total loss every REPORT_EVERY
+        print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
+
+        # if ((epoch+1) % REPORT_EVERY) == 0:
+        #     train_acc = evaluate(training_data,model,BATCH_SIZE,character_map,languages)
+        #     dev_acc = evaluate(data['dev'],model,BATCH_SIZE,character_map,languages)
+        #     print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
+        #           (epoch+1, total_loss, train_acc, dev_acc))
 
     # TODO: TEST
     with torch.no_grad():
