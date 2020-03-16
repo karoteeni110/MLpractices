@@ -45,7 +45,8 @@ def get_tag2ix(training_data):
                 tag_to_ix[t] = len(tag_to_ix)
     return tag_to_ix
 
-def get_tag2logfreq(training_data):
+def get_freq2ix(training_data):
+    freq_to_ix = {'#UNK#':0}
     all_tags = []
     for _, tags in training_data:
         all_tags.extend(tags)
@@ -53,7 +54,10 @@ def get_tag2logfreq(training_data):
     # Log of the freqs
     for t in tag_to_logfreq:
         tag_to_logfreq[t] = logfreq(tag_to_logfreq[t])
-    return tag_to_logfreq
+    for freq in tag_to_logfreq.values():
+        if freq not in freq_to_ix: 
+            freq_to_ix[freq] = len(freq_to_ix)
+    return freq_to_ix, tag_to_logfreq
 
 def read_conllu(filename):
     """
@@ -69,7 +73,7 @@ def read_conllu(filename):
     with open(filename, encoding='utf-8') as sefile:
         token_stack, tag_stack = [], []
         add_to_stack = False
-        for line in sefile.readlines():
+        for line in sefile.readlines()[:300]:
             rand_line = line.split()
             if rand_line == []:
                 add_to_stack = False
@@ -96,10 +100,11 @@ dev_data = read_conllu(DEV_FPATH)
 word_to_ix = get_word2ix(training_data)
 byte_to_ix, char_to_ix = get_byte2ix(training_data), get_char2ix(training_data)
 tag_to_ix = get_tag2ix(training_data) # {"DET": 0, "NN": 1, "V": 2}
-tag_to_logfreq = get_tag2logfreq(training_data) #{"DET": logfreq(3), "NN": logfreq(4), "V": logfreq(2)}
+freq_to_ix, tag_to_freq = get_freq2ix(training_data) #{"DET": logfreq(3), "NN": logfreq(4), "V": logfreq(2)}
 
 if __name__=="__main__":
     # Check that we don't crash on reading.
-    print(tag_to_ix)
+    print(freq_to_ix)
+    print(tag_to_freq)
     exit(0)
 

@@ -10,7 +10,7 @@ import torch.optim as optim
 from torch.autograd import Variable
 from copy import deepcopy
 
-from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,\
+from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to_freq,\
                     training_data,dev_data,test_data
 from path import data_path
 
@@ -19,7 +19,7 @@ torch.manual_seed(1)
 #--- hyperparameters ---
 save_modelname = 'fi_c+b.model'
 USE_WORD_EMB = False
-USE_BYTE_EMB = True
+USE_BYTE_EMB = False
 USE_CHAR_EMB = True 
 
 WORD_EMB_DIM = 128
@@ -30,6 +30,10 @@ N_EPOCHS = 20
 LEARNING_RATE = 0.1
 REPORT_EVERY = 5
 HIDDEN_DIM = 100
+
+def get_freq_targets_tensor(seq, to_ix=freq_to_ix):
+    idxs = [to_ix[tag_to_freq[t]] if tag_to_freq[t] in to_ix else to_ix['#UNK#'] for t in seq ]
+    return torch.tensor(idxs, dtype=torch.long)
 
 def get_targets_tensor(seq, to_ix=tag_to_ix):
     idxs = [to_ix[t] if t in to_ix else to_ix['#UNK#'] for t in seq ]
@@ -58,7 +62,7 @@ def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
         
 class LSTMTagger(nn.Module):
     def __init__(self,hidden_dim,word_vocab_size,char_vocab_size,\
-                byte_vocab_size,tagset_size):
+                byte_vocab_size,tagset_size, freqclass_size):
         super(LSTMTagger, self).__init__()
         self.hidden_dim = hidden_dim
 
@@ -85,6 +89,9 @@ class LSTMTagger(nn.Module):
         # The linear layer that maps from hidden state space to tag space
         self.hidden2tag = nn.Linear(hidden_dim*2, tagset_size)
         self.hidden = self.init_hidden()
+
+        # The linear layer that maps from hidden state space to log frequency label space
+        self.hidden2freq = nn.Linear(hidden_dim*2, freqclass_size)
 
     def init_hidden(self):
         # Var[aX+b]= (a**2) * Var[X]
@@ -132,7 +139,8 @@ class LSTMTagger(nn.Module):
         
         bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
         tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
-        return tag_space # F.log_softmax(tag_space, dim=1)
+        freq_space = self.hidden2freq(bilstm_out.view(len(sent), -1))
+        return tag_space, freq_space # F.log_softmax(tag_space, dim=1)
 
 def evaluate(data,model):
     with torch.no_grad():
@@ -140,11 +148,16 @@ def evaluate(data,model):
         for sentence, tags in data:
             # print(sentence, tags)
             model.hidden = model.init_hidden()
-            targets = get_targets_tensor(tags)
-            tag_preds= torch.argmax(model(sentence),dim=1)
-            micro_correct += torch.sum(torch.eq(tag_preds, targets)).item()
-            word_count += len(targets)
-            macro_acc += 1 if torch.equal(tag_preds, targets) else 0
+            
+            tag_targets = get_targets_tensor(tags)
+            freq_targets = get_freq_targets_tensor(tags)
+            tag_scores, freq_scores = model(sentence)        
+
+            tag_preds = torch.argmax(tag_scores,dim=1)
+            
+            micro_correct += torch.sum(torch.eq(tag_preds, tag_targets)).item()
+            word_count += len(tag_targets)
+            macro_acc += 1 if torch.equal(tag_preds, tag_targets) else 0
         
     return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0
 
@@ -153,7 +166,7 @@ if __name__ == "__main__":
     print('USE_BYTE_EMB:', USE_BYTE_EMB)
     print('USE_CHAR_EMB:', USE_CHAR_EMB)
 
-    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
+    model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix), len(freq_to_ix))
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
@@ -175,9 +188,15 @@ if __name__ == "__main__":
             # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
             targets = get_targets_tensor(tags)
-            tag_scores = model(sentence)       
-            loss = loss_function(tag_scores, targets)
+            freq_targets = get_freq_targets_tensor(tags)
+
+            tag_scores, freq_scores = model(sentence)
+
+            loss1 = loss_function(tag_scores, targets)
+            loss2 = loss_function(freq_scores, freq_targets)
+            loss = loss1 + loss2
             total_loss += loss.item()
+            
             loss.backward()
             optimizer.step()
 

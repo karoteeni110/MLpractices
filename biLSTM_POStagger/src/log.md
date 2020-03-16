@@ -18,3 +18,6 @@ epoch: 11, loss: 889.5190
 epoch: 12, loss: 704.0602
 epoch: 13, loss: 534.0274
 epoch: 14, loss: 500.5439
+...
+epoch: 20, train_loss: 211.3059, train acc: 99.41%, dev acc: 81.04%
+test acc: 81.94%
