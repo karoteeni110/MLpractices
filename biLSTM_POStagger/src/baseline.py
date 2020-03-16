@@ -10,7 +10,8 @@ import torch.optim as optim
 from torch.autograd import Variable
 from copy import deepcopy
 
-from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,training_data
+from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,\
+                    training_data,dev_data,test_data
 
 torch.manual_seed(1)
 
@@ -25,20 +26,20 @@ CHAR_EMB_DIM = 100
 MAX_SENT_LEN = 200
 N_EPOCHS = 20
 LEARNING_RATE = 0.1
-REPORT_EVERY = 1
+REPORT_EVERY = 5
 HIDDEN_DIM = 100
 
 def get_word_tensor(seq, to_ix=word_to_ix, use=USE_WORD_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [to_ix[w] for w in seq]
+    idxs = [to_ix[w] if w in to_ix else to_ix['#UNK#'] for w in seq ]
     return torch.tensor(idxs, dtype=torch.long)
 
 def get_char_tensor(seq, to_ix=char_to_ix, use=USE_CHAR_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [ [to_ix[c] for c in w] for w in seq ]
-    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
+    idxs = [ [to_ix[c] if c in to_ix else to_ix['#UNK#'] for c in w ] for w in seq ]
+    idxs = [ torch.tensor(w, dtype =torch.long) for w in idxs ]
     return idxs
 
 def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
@@ -90,7 +91,7 @@ class LSTMTagger(nn.Module):
     def forward(self, sent):
         # WORD + (char or byte)
         if USE_WORD_EMB:
-            word_idx = get_word_tensor(deepcopy(sent))
+            word_idx = get_word_tensor(sent)
             word_emb = self.word_embeddings(word_idx).view(len(sent),1,WORD_EMB_DIM)
             # Add seq position information
             i = torch.arange(0, len(sent), dtype=torch.long)
@@ -111,17 +112,17 @@ class LSTMTagger(nn.Module):
                 # print() #BREAK POINT
             
             # TODO: byte
-            # if USE_BYTE_EMB:
-            #     final_byte_emb = []
-            #     byte_idx = Variable(get_byte_tensor(sent))
-            #     for word in byte_idx:
-            #         byte_embeds = self.byte_embeddings(word)
-                        # self.hidden_byte = self.init_hidden()
-            #         lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
-            #         final_byte_emb.append(lstm_byte_out[-1])
-            #     final_byte_emb = torch.stack(final_byte_emb)
+            if USE_BYTE_EMB:
+                final_byte_emb = []
+                byte_idx = get_byte_tensor(sent)
+                for word in byte_idx:
+                    byte_embeds = self.byte_embeddings(word)
+                    self.hidden_byte = self.init_hidden()
+                    lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
+                    final_byte_emb.append(lstm_byte_out[-1])
+                final_byte_emb = torch.stack(final_byte_emb)
                 
-            #     bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
+                bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
                 
         
         # TODO: CHAR + BYTE
@@ -137,8 +138,18 @@ class LSTMTagger(nn.Module):
         tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
         return tag_space # F.log_softmax(tag_space, dim=1)
 
-def evaluate():
-    pass
+def evaluate(data,model):
+    with torch.no_grad():
+        micro_correct, word_count, macro_acc = 0,0,0
+        for sentence, tags in data:
+            # print(sentence, tags)
+            model.hidden = model.init_hidden()
+            targets = get_word_tensor(tags, tag_to_ix, use=True)
+            tag_preds= torch.argmax(model(sentence),dim=1)
+            micro_correct += torch.sum(torch.eq(tag_preds, targets)).item()
+            word_count += len(targets)
+            macro_acc += 1 if torch.equal(tag_preds, targets) else 0
+    return micro_correct/word_count * 100.0, macro_acc*100.0
 
 if __name__ == "__main__":
 
@@ -154,7 +165,7 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
-        for sentence, tags in training_data[:100]:
+        for sentence, tags in training_data:
             
             model.zero_grad()
             # Clear out the hidden state of the LSTM,
@@ -173,14 +184,15 @@ if __name__ == "__main__":
         # TODO: report total loss every REPORT_EVERY
         print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
 
-        # if ((epoch+1) % REPORT_EVERY) == 0:
-        #     train_acc = evaluate(training_data,model,BATCH_SIZE,character_map,languages)
-        #     dev_acc = evaluate(data['dev'],model,BATCH_SIZE,character_map,languages)
-        #     print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
-        #           (epoch+1, total_loss, train_acc, dev_acc))
+        if ((epoch+1) % REPORT_EVERY) == 0:
+            train_mi_acc, train_ma_acc = evaluate(training_data,model)
+            dev_mi_acc, dev_ma_acc = evaluate(dev_data,model)
+            print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
+                  (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
 
     # TODO: TEST
     with torch.no_grad():
         sent = training_data[0][0]
         tag_scores = model(sent)
         print(tag_scores)
+        print(torch.argmax(tag_scores,dim=1))

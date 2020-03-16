@@ -1,7 +1,7 @@
 """https://universaldependencies.org/treebanks/fi_tdt/index.html"""
 import csv, sys, math
 from os import listdir
-from collections import Counter
+from collections import Counter, defaultdict
 
 TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-train.conllu.txt'
 TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
@@ -11,7 +11,7 @@ def logfreq(freq):
     return int(math.log(freq))
 
 def get_byte2ix(training_data):
-    byte_to_ix = {}
+    byte_to_ix = {'#UNK#':0}
     for sent, _ in training_data:
         for word in sent:
             for c in word:
@@ -21,7 +21,7 @@ def get_byte2ix(training_data):
     return byte_to_ix 
 
 def get_char2ix(training_data):
-    char_to_ix = {}
+    char_to_ix = {'#UNK#':0}
     for sent, _ in training_data:
         for word in sent:
             for char in word:
@@ -30,7 +30,7 @@ def get_char2ix(training_data):
     return char_to_ix
 
 def get_word2ix(training_data):
-    word_to_ix = {}
+    word_to_ix = {'#UNK#':0}
     for sent, _ in training_data:
         for word in sent:
             if word not in word_to_ix:
@@ -38,7 +38,7 @@ def get_word2ix(training_data):
     return word_to_ix
 
 def get_tag2ix(training_data):
-    tag_to_ix = {}
+    tag_to_ix = {'#UNK#':0}
     for _, tags in training_data:
         for t in tags:
             if t not in tag_to_ix:
