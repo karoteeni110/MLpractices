@@ -15,7 +15,7 @@ from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,training_data
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-USE_WORD_EMB = True
+USE_WORD_EMB = False
 USE_BYTE_EMB = False
 USE_CHAR_EMB = True 
 
@@ -90,36 +90,38 @@ class LSTMTagger(nn.Module):
     def forward(self, sent):
         # WORD + (char or byte)
         if USE_WORD_EMB:
-            word_idx = Variable(get_word_tensor(deepcopy(sent)))
+            word_idx = get_word_tensor(deepcopy(sent))
             word_emb = self.word_embeddings(word_idx).view(len(sent),1,WORD_EMB_DIM)
             # Add seq position information
             i = torch.arange(0, len(sent), dtype=torch.long)
             word_emb += self.position_emb(i).view(len(sent),1,WORD_EMB_DIM)
             bilstm_in = word_emb
 
-            if USE_CHAR_EMB:
-                final_char_emb = []
-                char_idx = get_char_tensor(deepcopy(sent))
-                for word in char_idx:
-                    char_embeds = self.char_embeddings(Variable(word))
-                    lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
-                    final_char_emb.append(lstm_char_out[-1])
-                final_char_emb = torch.stack(final_char_emb)
+        if USE_CHAR_EMB:
+            final_char_emb = []
+            char_idx = get_char_tensor(deepcopy(sent))
+            for word in char_idx:
+                char_embeds = self.char_embeddings(word)
+                lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
                 
-                bilstm_in = torch.cat((word_emb, final_char_emb), 2)
-                print() #BREAK POINT
+                # final_char_emb.append(lstm_char_out[-1])
+            # final_char_emb = torch.stack(final_char_emb)
             
-            # TODO: char
-            if USE_BYTE_EMB:
-                final_byte_emb = []
-                byte_idx = Variable(get_byte_tensor(sent))
-                for word in byte_idx:
-                    byte_embeds = self.byte_embeddings(word)
-                    lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
-                    final_byte_emb.append(lstm_byte_out[-1])
-                final_byte_emb = torch.stack(final_byte_emb)
+            bilstm_in = lstm_char_out[-1].view(1,1,-1) # final_char_emb
+                # bilstm_in = torch.cat((word_emb, final_char_emb), 2)
+                # print() #BREAK POINT
+            
+            # TODO: byte
+            # if USE_BYTE_EMB:
+            #     final_byte_emb = []
+            #     byte_idx = Variable(get_byte_tensor(sent))
+            #     for word in byte_idx:
+            #         byte_embeds = self.byte_embeddings(word)
+            #         lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
+            #         final_byte_emb.append(lstm_byte_out[-1])
+            #     final_byte_emb = torch.stack(final_byte_emb)
                 
-                bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
+            #     bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
                 
         
         # TODO: CHAR + BYTE
@@ -134,7 +136,7 @@ class LSTMTagger(nn.Module):
         
         # bilstm_in = embeds.view(len(sent),1,self.embedding_dim)
         bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
-        tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
+        tag_space = self.hidden2tag(bilstm_out.view((1,-1))) # .view(len(sent), -1))
         return tag_space # F.log_softmax(tag_space, dim=1)
 
 def evaluate():
@@ -165,7 +167,7 @@ if __name__ == "__main__":
             # Tensors of word indices.
             targets = get_word_tensor(tags, tag_to_ix, use=True) #TODO:
             tag_scores = model(sentence)       
-            loss = loss_function(tag_scores, targets)
+            loss = loss_function(tag_scores, targets[0].unsqueeze(0))
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
