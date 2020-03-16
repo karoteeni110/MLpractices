@@ -16,15 +16,18 @@ from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,\
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-USE_WORD_EMB = True
-USE_BYTE_EMB = False
-USE_CHAR_EMB = False 
+USE_WORD_EMB = False
+USE_BYTE_EMB = True
+USE_CHAR_EMB = True 
+print('USE_WORD_EMB:', USE_WORD_EMB)
+print('USE_BYTE_EMB:', USE_BYTE_EMB)
+print('USE_CHAR_EMB:', USE_CHAR_EMB)
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
 CHAR_EMB_DIM = 100
 MAX_SENT_LEN = 200
-N_EPOCHS = 20
+N_EPOCHS = 50
 LEARNING_RATE = 0.1
 REPORT_EVERY = 5
 HIDDEN_DIM = 100
@@ -46,8 +49,8 @@ def get_byte_tensor(seq, to_ix=byte_to_ix, use=USE_BYTE_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
     # idxs = [ [torch.tensor(to_ix[c],dtype=torch.long) for c in w] for w in seq ]
-    idxs = [ [ to_ix[b] for c in w for b in list(c.encode())] for w in seq]
-    idxs = [ Variable(torch.tensor(w, dtype=torch.long)) for w in idxs ]
+    idxs = [ [ to_ix[b] if b in to_ix else to_ix['#UNK#'] for c in w for b in list(c.encode())] for w in seq]
+    idxs = [ torch.tensor(w, dtype=torch.long) for w in idxs ]
     return idxs
         
 class LSTMTagger(nn.Module):
@@ -98,41 +101,31 @@ class LSTMTagger(nn.Module):
             word_emb += self.position_emb(i).view(len(sent),1,WORD_EMB_DIM)
             bilstm_in = word_emb
 
-            if USE_CHAR_EMB:
-                final_char_emb = []
-                char_idx = get_char_tensor(sent)
-                for word in char_idx:
-                    char_embeds = self.char_embeddings(word)
-                    self.hidden_char = self.init_hidden()
-                    lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
-                    final_char_emb.append(lstm_char_out[-1])
-                final_char_emb = torch.stack(final_char_emb)
-            
-                bilstm_in = torch.cat((word_emb, final_char_emb), 2)
-                # print() #BREAK POINT
-            
-            # TODO: byte
-            if USE_BYTE_EMB:
-                final_byte_emb = []
-                byte_idx = get_byte_tensor(sent)
-                for word in byte_idx:
-                    byte_embeds = self.byte_embeddings(word)
-                    self.hidden_byte = self.init_hidden()
-                    lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
-                    final_byte_emb.append(lstm_byte_out[-1])
-                final_byte_emb = torch.stack(final_byte_emb)
-                
-                bilstm_in = torch.cat((word_embeds, final_byte_emb), 2)
-                
-        
-        # TODO: CHAR + BYTE
-        if USE_CHAR_EMB and USE_BYTE_EMB:
-            char_result = []
-            char_idx = get_char_tensor(sent,char_to_ix)
+        if USE_CHAR_EMB:
+            final_char_emb = []
+            char_idx = get_char_tensor(sent)
             for word in char_idx:
-                char_emb = self.char_embeddings(word)
-                lstm_char_out, self.hidden_char = self.bilstm_char(char_emb.view(len(word), 1, CHAR_EMB_DIM), self.hidden)
-            bilstm_in = 0
+                char_embeds = self.char_embeddings(word)
+                self.hidden_char = self.init_hidden()
+                lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
+                final_char_emb.append(lstm_char_out[-1])
+            final_char_emb = torch.stack(final_char_emb)
+            bilstm_in = final_char_emb
+
+        if USE_BYTE_EMB:
+            final_byte_emb = []
+            byte_idx = get_byte_tensor(sent)
+            for word in byte_idx:
+                byte_embeds = self.byte_embeddings(word)
+                self.hidden_byte = self.init_hidden()
+                lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
+                final_byte_emb.append(lstm_byte_out[-1])
+            final_byte_emb = torch.stack(final_byte_emb)
+
+        if USE_CHAR_EMB and USE_BYTE_EMB: 
+            bilstm_in = torch.cat((final_char_emb, final_byte_emb), 2)
+        if USE_WORD_EMB and USE_CHAR_EMB:
+            bilstm_in = torch.cat((word_emb, final_char_emb), 2)
         
         bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
         tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
@@ -149,7 +142,7 @@ def evaluate(data,model):
             micro_correct += torch.sum(torch.eq(tag_preds, targets)).item()
             word_count += len(targets)
             macro_acc += 1 if torch.equal(tag_preds, targets) else 0
-    return micro_correct/word_count * 100.0, macro_acc*100.0
+    return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0
 
 if __name__ == "__main__":
 
