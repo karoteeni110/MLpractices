@@ -69,7 +69,7 @@ def read_conllu(filename):
     with open(filename, encoding='utf-8') as sefile:
         token_stack, tag_stack = [], []
         add_to_stack = False
-        for line in sefile.readlines()[:100]:
+        for line in sefile.readlines()[:300]:
             rand_line = line.split()
             if rand_line == []:
                 add_to_stack = False
@@ -80,8 +80,9 @@ def read_conllu(filename):
                 add_to_stack = True
 
             if add_to_stack:
-                token_stack.append(rand_line[1])
+                token_stack.append(rand_line[1].lower())
                 tag_stack.append(rand_line[4])
+
     return data
 
 # training_data = [

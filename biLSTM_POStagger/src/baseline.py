@@ -12,36 +12,39 @@ from copy import deepcopy
 
 from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,\
                     training_data,dev_data,test_data
+from path import data_path
 
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-USE_WORD_EMB = False
-USE_BYTE_EMB = True
-USE_CHAR_EMB = True 
-print('USE_WORD_EMB:', USE_WORD_EMB)
-print('USE_BYTE_EMB:', USE_BYTE_EMB)
-print('USE_CHAR_EMB:', USE_CHAR_EMB)
+save_modelname = 'w.model'
+USE_WORD_EMB = True
+USE_BYTE_EMB = False
+USE_CHAR_EMB = False 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
 CHAR_EMB_DIM = 100
-MAX_SENT_LEN = 200
-N_EPOCHS = 50
+MAX_SENT_LEN = 300
+N_EPOCHS = 20
 LEARNING_RATE = 0.1
 REPORT_EVERY = 5
 HIDDEN_DIM = 100
 
+def get_targets_tensor(seq, to_ix=tag_to_ix):
+    idxs = [to_ix[t] if t in to_ix else to_ix['#UNK#'] for t in seq ]
+    return torch.tensor(idxs, dtype=torch.long)
+
 def get_word_tensor(seq, to_ix=word_to_ix, use=USE_WORD_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [to_ix[w] if w in to_ix else to_ix['#UNK#'] for w in seq ]
+    idxs = [to_ix[w.lower()] if w.lower() in to_ix else to_ix['#UNK#'] for w in seq ]
     return torch.tensor(idxs, dtype=torch.long)
 
 def get_char_tensor(seq, to_ix=char_to_ix, use=USE_CHAR_EMB):
     if not use:
         return torch.LongTensor([]).repeat(len(seq),0)
-    idxs = [ [to_ix[c] if c in to_ix else to_ix['#UNK#'] for c in w ] for w in seq ]
+    idxs = [ [to_ix[c.lower()] if c.lower() in to_ix else to_ix['#UNK#'] for c in w ] for w in seq ]
     idxs = [ torch.tensor(w, dtype =torch.long) for w in idxs ]
     return idxs
 
@@ -137,14 +140,18 @@ def evaluate(data,model):
         for sentence, tags in data:
             # print(sentence, tags)
             model.hidden = model.init_hidden()
-            targets = get_word_tensor(tags, tag_to_ix, use=True)
+            targets = get_targets_tensor(tags)
             tag_preds= torch.argmax(model(sentence),dim=1)
             micro_correct += torch.sum(torch.eq(tag_preds, targets)).item()
             word_count += len(targets)
             macro_acc += 1 if torch.equal(tag_preds, targets) else 0
+        
     return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0
 
 if __name__ == "__main__":
+    print('USE_WORD_EMB:', USE_WORD_EMB)
+    print('USE_BYTE_EMB:', USE_BYTE_EMB)
+    print('USE_CHAR_EMB:', USE_CHAR_EMB)
 
     model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
     loss_function = nn.CrossEntropyLoss()
@@ -158,7 +165,7 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
-        for sentence, tags in training_data:
+        for i, (sentence, tags) in enumerate(training_data):
             
             model.zero_grad()
             # Clear out the hidden state of the LSTM,
@@ -167,13 +174,15 @@ if __name__ == "__main__":
 
             # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
-            targets = get_word_tensor(tags, tag_to_ix, use=True) #TODO:
+            targets = get_targets_tensor(tags)
             tag_scores = model(sentence)       
             loss = loss_function(tag_scores, targets)
             total_loss += loss.item()
             loss.backward()
             optimizer.step()
 
+            # if i+1 % int(0.1 * len(training_data)) == 0:
+            #     print('Training:', i+1, '/', len(training_data) )
         print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
 
         if ((epoch+1) % REPORT_EVERY) == 0:
@@ -182,9 +191,14 @@ if __name__ == "__main__":
             print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
                   (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
 
-    # TODO: TEST
+    
     test_acc, _ = evaluate(test_data, model)
     print('test acc: %.2f%%' % (test_acc))
+    if save_modelname != '':
+        p = data_path + '/%s' % save_modelname
+        torch.save(model.state_dict(), p)
+        print('Model state:', p)
+    
     # with torch.no_grad():
     #     sent = training_data[0][0]
     #     tag_scores = model(sent)
