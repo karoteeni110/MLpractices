@@ -4,7 +4,18 @@ from os.path import join
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
 USE_CHAR_EMB = False 
+
+model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
+
 state_dict_path = join(data_path, 'fi_w.model')
+model.load_state_dict(torch.load(state_dict_path))
+
+# If checkpoint
+checkpoint_fpath = join(data_path, '')
+checkpoint = torch.load(checkpoint)
+model.load_state_dict(checkpoint['model_state_dict'])
+
+model.eval()
 
 def infer_evaluate(data,model):
     loss_function = nn.CrossEntropyLoss()
@@ -27,10 +38,6 @@ def infer_evaluate(data,model):
                 print('Training:', i+1, '/', len(training_data) )
         print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
     return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0, total_loss
-
-model = LSTMTagger(HIDDEN_DIM,len(word_to_ix),len(char_to_ix),len(byte_to_ix),len(tag_to_ix))
-model.load_state_dict(torch.load(state_dict_path))
-model.eval()
 
 if __name__ == "__main__":
     train_mi_acc, train_ma_acc, train_loss = infer_evaluate(training_data,model)

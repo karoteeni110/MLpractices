@@ -216,6 +216,7 @@ if __name__ == "__main__":
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,
             }, checkpoint_fpath)
+            print('Checkpoint saved:', checkpoint_fpath)
 
     
     test_acc, _ = evaluate(test_data, model)
