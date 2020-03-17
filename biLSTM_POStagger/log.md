@@ -1,4 +1,4 @@
-## w
+## fi, w
 USE_WORD_EMB: True
 USE_BYTE_EMB: False
 USE_CHAR_EMB: False

@@ -1,5 +1,5 @@
 """Reproducing the work from Plank et al. (2016)
-BASELINE biLSTM tagger
+biLSTM tagger with auxilary loss
 References: 
 1. https://pytorch.org/tutorials/beginner/nlp/sequence_models_tutorial.html 
 2. https://github.com/FraLotito/pytorch-partofspeech-tagger/blob/master/post.py """
@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-from copy import deepcopy
 
 from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to_freq,\
                     training_data,dev_data,test_data
@@ -209,6 +208,14 @@ if __name__ == "__main__":
             dev_mi_acc, dev_ma_acc = evaluate(dev_data,model)
             print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
                   (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
+
+            checkpoint_fpath= data_path + '/EP%d_%s' % (epoch,save_modelname)
+            torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, checkpoint_fpath)
 
     
     test_acc, _ = evaluate(test_data, model)
