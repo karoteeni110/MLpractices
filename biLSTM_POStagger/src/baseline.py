@@ -105,15 +105,16 @@ class LSTMTagger(nn.Module):
         # WORD + (char or byte)
         if BATCH_SIZE == 1:
             sent = sents
+            seqlen = len(sent)
         else:
-            _, batch_size = sents.shape
+            seqlen, batch_size = sents.shape
 
         if USE_WORD_EMB:
             word_idx = get_word_tensor(sent)
-            word_emb = self.word_embeddings(word_idx).view(len(sent),batch_size,WORD_EMB_DIM)
+            word_emb = self.word_embeddings(word_idx).view(seqlen,batch_size,WORD_EMB_DIM)
             # Add seq position information
-            i = torch.arange(0, len(sent), dtype=torch.long)
-            word_emb += self.position_emb(i).view(len(sent),batch_size,WORD_EMB_DIM)
+            i = torch.arange(0, seqlen, dtype=torch.long)
+            word_emb += self.position_emb(i).view(seqlen,batch_size,WORD_EMB_DIM)
             bilstm_in = word_emb
 
         if USE_CHAR_EMB:
@@ -143,8 +144,8 @@ class LSTMTagger(nn.Module):
             bilstm_in = torch.cat((word_emb, final_char_emb), 2)
         
         bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
-        tag_space = self.hidden2tag(bilstm_out.view(len(sent), batch_size, -1))
-        freq_space = self.hidden2freq(bilstm_out.view(len(sent), batch_size, -1))
+        tag_space = self.hidden2tag(bilstm_out.view(seqlen, batch_size, -1))
+        freq_space = self.hidden2freq(bilstm_out.view(seqlen, batch_size, -1))
         return tag_space, freq_space # F.log_softmax(tag_space, dim=1)
 
 def evaluate(data,model):
@@ -179,15 +180,16 @@ def evaluate(data,model):
         
     return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0
 
-def get_minibatch(sents):
+def get_minibatch(data):
     max_length = max([s.shape[0] for s in sents])
-    for i in range(len(tensors)):
-        if tensors[i].shape[0] < max_length:
-            tensors[i] = F.pad(tensors[i], (0,max_length-tensors[i].shape[0]), "constant", character_map['#'])
+    # for i in range(len(tensors)):
+        # if tensors[i].shape[0] < max_length:
+            # tensors[i] = F.pad(tensors[i], (0,max_length-tensors[i].shape[0]), "constant", character_map['#'])
 
-    mb_x = torch.stack(tensors,dim=1)
-    mb_y = torch.stack([label_to_idx(word_ex['LANGUAGE'], languages) for word_ex in minibatchwords if len(word_ex['TENSOR'])],dim=1).view(-1)
-    return mb_x, mb_y
+    mb_x = data
+    mb_y_tag = torch.stack([tag_to_ix(tag) for _,tags in data],dim=1).view(-1)
+    mb_y_freq = 0
+    return mb_x, mb_y_tag, mb_y_freq
 
 def get_sent_length(seq):
     return len(seq)
