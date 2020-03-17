@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
-from random import shuffle
+
 from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to_freq,\
                     training_data,dev_data,test_data
 from path import data_path
@@ -16,12 +16,11 @@ from path import data_path
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-save_modelname = 'fi_auxloss_b+c.model'
-USE_WORD_EMB = False
-USE_BYTE_EMB = True
+save_modelname = 'fi_auxloss_w+c.model'
+USE_WORD_EMB = True
+USE_BYTE_EMB = False
 USE_CHAR_EMB = True 
 
-BATCH_SIZE = 1
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
 CHAR_EMB_DIM = 100
@@ -98,23 +97,17 @@ class LSTMTagger(nn.Module):
         # The axes semantics are (num_layers, minibatch_size, hidden_dim)
         sigma = 0.2
         a = torch.sqrt(torch.tensor(sigma))
-        return (a*torch.randn([2,BATCH_SIZE,self.hidden_dim]),
-                a*torch.randn([2,BATCH_SIZE,self.hidden_dim]))
+        return (a*torch.randn([2,1,self.hidden_dim]),
+                a*torch.randn([2,1,self.hidden_dim]))
 
-    def forward(self, sents):
+    def forward(self, sent):
         # WORD + (char or byte)
-        if BATCH_SIZE == 1:
-            sent = sents
-            seqlen = len(sent)
-        else:
-            seqlen, batch_size = sents.shape
-
         if USE_WORD_EMB:
             word_idx = get_word_tensor(sent)
-            word_emb = self.word_embeddings(word_idx).view(seqlen,batch_size,WORD_EMB_DIM)
+            word_emb = self.word_embeddings(word_idx).view(len(sent),1,WORD_EMB_DIM)
             # Add seq position information
-            i = torch.arange(0, seqlen, dtype=torch.long)
-            word_emb += self.position_emb(i).view(seqlen,batch_size,WORD_EMB_DIM)
+            i = torch.arange(0, len(sent), dtype=torch.long)
+            word_emb += self.position_emb(i).view(len(sent),1,WORD_EMB_DIM)
             bilstm_in = word_emb
 
         if USE_CHAR_EMB:
@@ -123,7 +116,7 @@ class LSTMTagger(nn.Module):
             for word in char_idx:
                 char_embeds = self.char_embeddings(word)
                 self.hidden_char = self.init_hidden()
-                lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), batch_size, CHAR_EMB_DIM), self.hidden_char)
+                lstm_char_out, self.hidden_char = self.lstm_char(char_embeds.view(len(word), 1, CHAR_EMB_DIM), self.hidden_char)
                 final_char_emb.append(lstm_char_out[-1])
             final_char_emb = torch.stack(final_char_emb)
             bilstm_in = final_char_emb
@@ -134,7 +127,7 @@ class LSTMTagger(nn.Module):
             for word in byte_idx:
                 byte_embeds = self.byte_embeddings(word)
                 self.hidden_byte = self.init_hidden()
-                lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), batch_size, BYTE_EMB_DIM), self.hidden_byte)
+                lstm_byte_out, self.hidden_byte = self.lstm_byte(byte_embeds.view(len(word), 1, BYTE_EMB_DIM), self.hidden_byte)
                 final_byte_emb.append(lstm_byte_out[-1])
             final_byte_emb = torch.stack(final_byte_emb)
 
@@ -144,55 +137,28 @@ class LSTMTagger(nn.Module):
             bilstm_in = torch.cat((word_emb, final_char_emb), 2)
         
         bilstm_out, self.hidden = self.bilstm(bilstm_in, self.hidden)
-        tag_space = self.hidden2tag(bilstm_out.view(seqlen, batch_size, -1))
-        freq_space = self.hidden2freq(bilstm_out.view(seqlen, batch_size, -1))
+        tag_space = self.hidden2tag(bilstm_out.view(len(sent), -1))
+        freq_space = self.hidden2freq(bilstm_out.view(len(sent), -1))
         return tag_space, freq_space # F.log_softmax(tag_space, dim=1)
 
 def evaluate(data,model):
     with torch.no_grad():
         micro_correct, word_count, macro_acc = 0,0,0
+        for sentence, tags in data:
+            # print(sentence, tags)
+            model.hidden = model.init_hidden()
+            
+            tag_targets = get_targets_tensor(tags)
+            freq_targets = get_freq_targets_tensor(tags)
+            tag_scores, freq_scores = model(sentence)        
 
-        if BATCH_SIZE != 1:
-            data.sort(key=get_sent_length)
-            for i in range(0,len(dataset),BATCH_SIZE):
-                mbsents = dataset[i:i+BATCH_SIZE]    
-                mb_x, mb_y_tag, mb_y_freq = get_minibatch(mbsents)
-
-                tag_scores, freq_scores = model(mb_x)
-                tag_preds = torch.argmax(tag_scores,dim=1)
-                _, predicted = torch.max(tag_scores, dim=1)
-                micro_correct += torch.sum(torch.eq(tag_preds,mb_y)).item()
-
-        else:
-            for sentence, tags in data:
-                # print(sentence, tags)
-                model.hidden = model.init_hidden()
-                
-                tag_targets = get_targets_tensor(tags)
-                freq_targets = get_freq_targets_tensor(tags)
-                tag_scores, freq_scores = model(sentence)        
-
-                tag_preds = torch.argmax(tag_scores,dim=1)
-                
-                micro_correct += torch.sum(torch.eq(tag_preds, tag_targets)).item()
-                word_count += len(tag_targets)
-                macro_acc += 1 if torch.equal(tag_preds, tag_targets) else 0
+            tag_preds = torch.argmax(tag_scores,dim=1)
+            
+            micro_correct += torch.sum(torch.eq(tag_preds, tag_targets)).item()
+            word_count += len(tag_targets)
+            macro_acc += 1 if torch.equal(tag_preds, tag_targets) else 0
         
     return micro_correct/word_count * 100.0, macro_acc/len(data)*100.0
-
-def get_minibatch(data):
-    max_length = max([s.shape[0] for s in sents])
-    # for i in range(len(tensors)):
-        # if tensors[i].shape[0] < max_length:
-            # tensors[i] = F.pad(tensors[i], (0,max_length-tensors[i].shape[0]), "constant", character_map['#'])
-
-    mb_x = data
-    mb_y_tag = torch.stack([tag_to_ix(tag) for _,tags in data],dim=1).view(-1)
-    mb_y_freq = 0
-    return mb_x, mb_y_tag, mb_y_freq
-
-def get_sent_length(seq):
-    return len(seq)
 
 if __name__ == "__main__":
     print('USE_WORD_EMB:', USE_WORD_EMB)
@@ -211,66 +177,46 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
-        shuffle(training_data)
-        
-        training_data.sort(key=get_sent_length)
+        for i, (sentence, tags) in enumerate(training_data):
+            
+            model.zero_grad()
+            # Clear out the hidden state of the LSTM,
+            # detaching it from its history on the last instance.
+            model.hidden = model.init_hidden()
 
-        if BATCH_SIZE != 1:
-            for i in range(0,len(training_data),BATCH_SIZE):
-                mbsents = training_data[i:i+BATCH_SIZE]
-                mb_x, mb_y_tag, mb_y_freq = get_minibatch(mbsents)
-                
-                tag_scores, freq_scores = model(mb_x)
+            # Get inputs ready for the network, that is, turn them into
+            # Tensors of word indices.
+            targets = get_targets_tensor(tags)
+            freq_targets = get_freq_targets_tensor(tags)
 
-                optimizer.zero_grad()
-                loss1 = loss_function(tag_scores, mb_y_tag)
-                loss2 = loss_function(freq_scores, mb_y_freq)
-                loss = loss1 + loss2
-                total_loss += loss.item()
+            tag_scores, freq_scores = model(sentence)
 
-                loss.backward()
-                optimizer.step()
+            loss1 = loss_function(tag_scores, targets)
+            loss2 = loss_function(freq_scores, freq_targets)
+            loss = loss1 + loss2
+            total_loss += loss.item()
 
-        else:
-            for i, (sentence, tags) in enumerate(training_data):
-                
-                model.zero_grad()
-                # Clear out the hidden state of the LSTM,
-                # detaching it from its history on the last instance.
-                model.hidden = model.init_hidden()
+            loss.backward()
+            optimizer.step()
 
-                # Get inputs ready for the network, that is, turn them into
-                # Tensors of word indices.
-                targets = get_targets_tensor(tags)
-                freq_targets = get_freq_targets_tensor(tags)
+            # if i+1 % int(0.1 * len(training_data)) == 0:
+            #     print('Training:', i+1, '/', len(training_data) )
+        print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
 
-                tag_scores, freq_scores = model(sentence)
+        if ((epoch+1) % REPORT_EVERY) == 0:
+            train_mi_acc, train_ma_acc = evaluate(training_data,model)
+            dev_mi_acc, dev_ma_acc = evaluate(dev_data,model)
+            print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
+                  (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
 
-                loss1 = loss_function(tag_scores, targets)
-                loss2 = loss_function(freq_scores, freq_targets)
-                loss = loss1 + loss2
-                total_loss += loss.item()
-
-                loss.backward()
-                optimizer.step()
-
-                
-            print('epoch: %d, loss: %.4f' % ((epoch+1), total_loss))
-
-            if ((epoch+1) % REPORT_EVERY) == 0:
-                train_mi_acc, train_ma_acc = evaluate(training_data,model)
-                dev_mi_acc, dev_ma_acc = evaluate(dev_data,model)
-                print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
-                    (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
-
-                checkpoint_fpath= data_path + '/EP%d_%s' % (epoch,save_modelname)
-                torch.save({
-                'epoch': epoch,
-                'model_state_dict': model.state_dict(),
-                'optimizer_state_dict': optimizer.state_dict(),
-                'loss': loss,
-                }, checkpoint_fpath)
-                print('Checkpoint saved:', checkpoint_fpath)
+            checkpoint_fpath= data_path + '/EP%d_%s' % (epoch+1,save_modelname)
+            torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss,
+            }, checkpoint_fpath)
+            print('Checkpoint saved:', checkpoint_fpath)
 
     
     test_acc, _ = evaluate(test_data, model)

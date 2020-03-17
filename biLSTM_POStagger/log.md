@@ -22,7 +22,7 @@ epoch: 14, loss: 500.5439
 epoch: 20, train_loss: 211.3059, train acc: 99.41%, dev acc: 81.04%
 test acc: 81.94%
 
-## w+c
+## fi, w+c
 USE_WORD_EMB: True
 USE_BYTE_EMB: False
 USE_CHAR_EMB: True
@@ -52,3 +52,34 @@ epoch: 20, loss: 26.0480
 epoch: 20, loss: 26.0480, train acc: 99.87%, dev acc: 93.27%
 test acc: 93.19%
 Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/fi_w+c.model
+
+## fi, aux loss, b+c
+USE_WORD_EMB: False
+USE_BYTE_EMB: True
+USE_CHAR_EMB: True
+epoch: 1, loss: 12742.2019
+epoch: 2, loss: 6886.6389
+epoch: 3, loss: 5143.0620
+epoch: 4, loss: 4208.3356
+epoch: 5, loss: 3485.5309
+epoch: 5, loss: 3485.5309, train acc: 93.70%, dev acc: 91.86%
+epoch: 6, loss: 2956.5958
+epoch: 7, loss: 2550.4592
+epoch: 8, loss: 2172.4990
+epoch: 9, loss: 1880.9984
+epoch: 10, loss: 1642.6161
+epoch: 10, loss: 1642.6161, train acc: 96.31%, dev acc: 93.37%
+epoch: 11, loss: 1422.7960
+epoch: 12, loss: 1285.7237
+epoch: 13, loss: 1094.6254
+epoch: 14, loss: 967.0086
+epoch: 15, loss: 992.8003
+epoch: 15, loss: 992.8003, train acc: 97.20%, dev acc: 93.94%
+epoch: 16, loss: 847.3595
+epoch: 17, loss: 701.1475
+epoch: 18, loss: 562.4180
+epoch: 19, loss: 552.1418
+epoch: 20, loss: 426.4361
+epoch: 20, loss: 426.4361, train acc: 98.70%, dev acc: 94.90%
+test acc: 95.07%
+Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/fi_auxloss_b+c.model
