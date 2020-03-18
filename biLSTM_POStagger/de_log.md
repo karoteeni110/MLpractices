@@ -43,3 +43,38 @@ epoch: 20, loss: 153.4098, train acc: 99.48%, dev acc: 95.09%
 Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP20_de_b+c.model
 test acc: 95.50%
 Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/de_b+c.model
+
+## de, aux loss, w
+USE_WORD_EMB: True
+USE_BYTE_EMB: False
+USE_CHAR_EMB: False
+epoch: 1, loss: 18685.0574
+epoch: 2, loss: 10217.4310
+epoch: 3, loss: 7398.0578
+epoch: 4, loss: 5487.5898
+epoch: 5, loss: 4158.6252
+epoch: 5, loss: 4158.6252, train acc: 94.90%, dev acc: 85.70%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP5_de_auxloss_w.model
+epoch: 6, loss: 3178.9628
+epoch: 7, loss: 2391.8952
+epoch: 8, loss: 1719.6351
+epoch: 9, loss: 1305.8509
+epoch: 10, loss: 936.1247
+epoch: 10, loss: 936.1247, train acc: 99.04%, dev acc: 86.12%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP10_de_auxloss_w.model
+epoch: 11, loss: 681.5937
+epoch: 12, loss: 485.3935
+epoch: 13, loss: 340.9362
+epoch: 14, loss: 281.4984
+epoch: 15, loss: 225.0123
+epoch: 15, loss: 225.0123, train acc: 99.90%, dev acc: 86.05%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP15_de_auxloss_w.model
+epoch: 16, loss: 179.5755
+epoch: 17, loss: 143.0634
+epoch: 18, loss: 127.9787
+epoch: 19, loss: 112.7418
+epoch: 20, loss: 114.8832
+epoch: 20, loss: 114.8832, train acc: 99.96%, dev acc: 86.47%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP20_de_auxloss_w.model
+test acc: 86.85%
+Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/de_auxloss_w.model
