@@ -15,9 +15,9 @@ from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to
 from path import data_path
 
 torch.manual_seed(1)
-
+training_data = training_data[:12000]
 #--- hyperparameters ---
-save_modelname = 'sv_auxloss_b+c.model'
+save_modelname = 'de_auxloss_b+c.model'
 USE_WORD_EMB = False
 USE_BYTE_EMB = True
 USE_CHAR_EMB = True 

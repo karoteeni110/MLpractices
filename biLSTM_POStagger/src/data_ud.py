@@ -7,13 +7,13 @@ from collections import Counter, defaultdict
 # TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
 # DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-dev.conllu.txt'
 
-TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-train.conllu.txt'
-TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-test.conllu.txt'
-DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-dev.conllu.txt'
+# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-train.conllu.txt'
+# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-test.conllu.txt'
+# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-dev.conllu.txt'
 
-# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
-# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt'
-# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt'
+DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
 
 print('TRAIN:', TRAIN_FPATH)
 print('TEST:', TEST_FPATH)
