@@ -107,3 +107,41 @@ Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP19_sv_b+
 test acc: 92.18%
 /content/drive/My Drive/Colab Notebooks/biLSTM/data/sv_talbanken-ud-train.conllu.txt
 Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/sv_b+c.model
+
+## sv, aux loss, w
+TRAIN: /Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-train.conllu.txt
+TEST: /Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-test.conllu.txt
+DEV: /Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-dev.conllu.txt
+USE_WORD_EMB: True
+USE_BYTE_EMB: False
+USE_CHAR_EMB: False
+epoch: 1, loss: 13126.5443
+epoch: 2, loss: 8748.9783
+epoch: 3, loss: 6574.4136
+epoch: 4, loss: 4958.0114
+epoch: 5, loss: 3787.8524
+epoch: 5, loss: 3787.8524, train acc: 86.49%, dev acc: 72.50%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP5_sv_auxloss_w.model
+epoch: 6, loss: 2839.8511
+epoch: 7, loss: 2140.7930
+epoch: 8, loss: 1601.9563
+epoch: 9, loss: 1179.4854
+epoch: 10, loss: 864.2035
+epoch: 10, loss: 864.2035, train acc: 96.57%, dev acc: 73.92%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP10_sv_auxloss_w.model
+epoch: 11, loss: 657.2789
+epoch: 12, loss: 502.8834
+epoch: 13, loss: 391.1786
+epoch: 14, loss: 319.4720
+epoch: 15, loss: 260.0342
+epoch: 15, loss: 260.0342, train acc: 99.16%, dev acc: 74.12%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP15_sv_auxloss_w.model
+epoch: 16, loss: 217.0106
+epoch: 17, loss: 201.7767
+epoch: 18, loss: 167.5412
+epoch: 19, loss: 143.4335
+epoch: 20, loss: 123.9788
+epoch: 20, loss: 123.9788, train acc: 99.67%, dev acc: 74.35%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP20_sv_auxloss_w.model
+test acc: 75.20%
+Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/sv_auxloss_w.model

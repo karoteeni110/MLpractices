@@ -17,10 +17,10 @@ from path import data_path
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-save_modelname = 'sv_auxloss_w.model'
+save_modelname = 'sv_auxloss_w+c.model'
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = False 
+USE_CHAR_EMB = True 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
