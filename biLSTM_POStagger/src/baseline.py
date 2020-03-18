@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+from random import shuffle
 
 from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to_freq,\
                     training_data,dev_data,test_data
@@ -16,10 +17,10 @@ from path import data_path
 torch.manual_seed(1)
 
 #--- hyperparameters ---
-save_modelname = 'fi_auxloss_w+c.model'
+save_modelname = 'sv_auxloss_w.model'
 USE_WORD_EMB = True
 USE_BYTE_EMB = False
-USE_CHAR_EMB = True 
+USE_CHAR_EMB = False 
 
 WORD_EMB_DIM = 128
 BYTE_EMB_DIM = 100
@@ -177,8 +178,9 @@ if __name__ == "__main__":
 
     for epoch in range(N_EPOCHS):
         total_loss = 0
+        shuffle(training_data)
+
         for i, (sentence, tags) in enumerate(training_data):
-            
             model.zero_grad()
             # Clear out the hidden state of the LSTM,
             # detaching it from its history on the last instance.
@@ -218,7 +220,6 @@ if __name__ == "__main__":
             }, checkpoint_fpath)
             print('Checkpoint saved:', checkpoint_fpath)
 
-    
     test_acc, _ = evaluate(test_data, model)
     print('test acc: %.2f%%' % (test_acc))
     if save_modelname != '':

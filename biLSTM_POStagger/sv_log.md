@@ -95,3 +95,15 @@ epoch: 14, loss: 217.0999
 epoch: 15, loss: 195.2276
 epoch: 15, loss: 195.2276, train acc: 98.08%, dev acc: 92.17%
 Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP14_sv_b+c.model
+epoch: 15, loss: 153.6708, train acc: 98.48%, dev acc: 92.47%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP14_sv_b+c.model
+epoch: 16, loss: 142.9426
+epoch: 17, loss: 124.7305
+epoch: 18, loss: 108.8638
+epoch: 19, loss: 89.9298
+epoch: 20, loss: 76.4501
+epoch: 20, loss: 76.4501, train acc: 99.31%, dev acc: 92.74%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP19_sv_b+c.model
+test acc: 92.18%
+/content/drive/My Drive/Colab Notebooks/biLSTM/data/sv_talbanken-ud-train.conllu.txt
+Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/sv_b+c.model

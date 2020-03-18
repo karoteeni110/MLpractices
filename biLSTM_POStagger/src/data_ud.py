@@ -3,9 +3,21 @@ import csv, sys, math
 from os import listdir
 from collections import Counter, defaultdict
 
-TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-train.conllu.txt'
-TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
-DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-dev.conllu.txt'
+# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-train.conllu.txt'
+# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
+# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-dev.conllu.txt'
+
+TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-train.conllu.txt'
+TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-test.conllu.txt'
+DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-dev.conllu.txt'
+
+# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt'
+# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+
+print('TRAIN:', TRAIN_FPATH)
+print('TEST:', TEST_FPATH)
+print('DEV:', DEV_FPATH)
 
 def logfreq(freq):
     return int(math.log(freq))
