@@ -211,7 +211,7 @@ if __name__ == "__main__":
 
             checkpoint_fpath= data_path + '/EP%d_%s' % (epoch+1,save_modelname)
             torch.save({
-            'epoch': epoch,
+            'epoch': epoch+1,
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss,

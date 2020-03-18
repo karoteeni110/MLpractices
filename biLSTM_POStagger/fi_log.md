@@ -83,3 +83,39 @@ epoch: 20, loss: 426.4361
 epoch: 20, loss: 426.4361, train acc: 98.70%, dev acc: 94.90%
 test acc: 95.07%
 Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/fi_auxloss_b+c.model
+
+## fi, aux loss, w+c
+
+USE_WORD_EMB: True
+USE_BYTE_EMB: False
+USE_CHAR_EMB: True
+epoch: 1, loss: 12377.7438
+epoch: 2, loss: 6260.4533
+epoch: 3, loss: 4178.0085
+epoch: 4, loss: 2873.3172
+epoch: 5, loss: 1974.2397
+epoch: 5, loss: 1974.2397, train acc: 95.92%, dev acc: 91.53%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP5_fi_auxloss_w+c.model
+epoch: 6, loss: 1365.2679
+epoch: 7, loss: 949.9546
+epoch: 8, loss: 604.0992
+epoch: 9, loss: 403.1922
+epoch: 10, loss: 318.9355
+epoch: 10, loss: 318.9355, train acc: 98.82%, dev acc: 92.60%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP10_fi_auxloss_w+c.model
+epoch: 11, loss: 278.3418
+epoch: 12, loss: 204.1368
+epoch: 13, loss: 132.7047
+epoch: 14, loss: 111.7421
+epoch: 15, loss: 78.0835
+epoch: 15, loss: 78.0835, train acc: 99.74%, dev acc: 93.11%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP15_fi_auxloss_w+c.model
+epoch: 16, loss: 58.3745
+epoch: 17, loss: 44.7913
+epoch: 18, loss: 39.3213
+epoch: 19, loss: 34.1623
+epoch: 20, loss: 30.7441
+epoch: 20, loss: 30.7441, train acc: 99.95%, dev acc: 93.51%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP20_fi_auxloss_w+c.model
+test acc: 93.97%
+Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/fi_auxloss_w+c.model
