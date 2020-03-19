@@ -108,3 +108,42 @@ epoch: 16, loss: 49.5639
 epoch: 17, loss: 44.4513
 epoch: 18, loss: 39.6131
 epoch: 19, loss: 36.6810
+
+## de, auxloss, b+c
+
+TRAIN: /Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt
+TEST: /Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt
+DEV: /Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt
+USE_WORD_EMB: False
+USE_BYTE_EMB: True
+USE_CHAR_EMB: True
+epoch: 1, loss: 13716.4672
+epoch: 2, loss: 5321.2905
+epoch: 3, loss: 3723.9908
+epoch: 4, loss: 2923.0964
+epoch: 5, loss: 2378.1157
+epoch: 5, loss: 2378.1157, train acc: 97.08%, dev acc: 95.80%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP5_de_auxloss_b+c.model
+epoch: 6, loss: 2019.4550
+epoch: 7, loss: 1666.0352
+epoch: 8, loss: 1360.5251
+epoch: 9, loss: 1140.8483
+epoch: 10, loss: 929.4076
+epoch: 10, loss: 929.4076, train acc: 98.83%, dev acc: 96.97%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP10_de_auxloss_b+c.model
+epoch: 11, loss: 792.3582
+epoch: 12, loss: 693.2063
+epoch: 13, loss: 602.4458
+epoch: 14, loss: 560.1024
+epoch: 15, loss: 462.9350
+epoch: 15, loss: 462.9350, train acc: 99.49%, dev acc: 97.30%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP15_de_auxloss_b+c.model
+epoch: 16, loss: 392.3253
+epoch: 17, loss: 361.8340
+epoch: 18, loss: 312.1077
+epoch: 19, loss: 225.3009
+epoch: 20, loss: 168.5472
+epoch: 20, loss: 168.5472, train acc: 99.83%, dev acc: 97.51%
+Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP20_de_auxloss_b+c.model
+test acc: 95.85%
+Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/de_auxloss_b+c.model
