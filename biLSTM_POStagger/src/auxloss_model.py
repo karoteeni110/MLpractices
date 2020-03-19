@@ -15,7 +15,7 @@ from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,token_
 from path import data_path
 
 torch.manual_seed(1)
-# training_data = training_data[:100]
+training_data = training_data[:100]
 
 #--- hyperparameters ---
 # save_modelname = 'de_auxloss_b+c.model'

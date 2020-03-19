@@ -3,17 +3,17 @@ import csv, sys, math
 from os import listdir
 from collections import Counter, defaultdict
 
-# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-train.conllu.txt'
-# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
-# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-dev.conllu.txt'
+TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-train.conllu.txt'
+TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-test.conllu.txt'
+DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/fi_tdt-ud-dev.conllu.txt'
 
 TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-train.conllu.txt'
 TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-test.conllu.txt'
 DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/sv_talbanken-ud-dev.conllu.txt'
 
-# TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
-# TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt'
-# DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+TRAIN_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
+TEST_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-test.conllu.txt'
+DEV_FPATH = '/Volumes/Valar Morghulis/ud_data/de_hdt-ud-train.conllu.txt'
 
 print('TRAIN:', TRAIN_FPATH)
 print('TEST:', TEST_FPATH)
@@ -70,20 +70,20 @@ def get_freq2ix(training_data):
             freq_to_ix[freq] = len(freq_to_ix)
     return freq_to_ix, token_to_logfreq
 
-# def get_freq2ix(training_data):
-#     """Wrong frequency! Should be token freq rather than POS tag """
-#     freq_to_ix = {'#UNK#':0}
-#     all_tags = []
-#     for _, tags in training_data:
-#         all_tags.extend(tags)
-#     tag_to_logfreq = Counter(all_tags) 
-#     # Log of the freqs
-#     for t in tag_to_logfreq:
-#         tag_to_logfreq[t] = logfreq(tag_to_logfreq[t])
-#     for freq in tag_to_logfreq.values():
-#         if freq not in freq_to_ix: 
-#             freq_to_ix[freq] = len(freq_to_ix)
-#     return freq_to_ix, tag_to_logfreq
+def get_tagfreq2ix(training_data):
+    """Should not be used"""
+    freq_to_ix = {'#UNK#':0}
+    all_tags = []
+    for _, tags in training_data:
+        all_tags.extend(tags)
+    tag_to_logfreq = Counter(all_tags) 
+    # Log of the freqs
+    for t in tag_to_logfreq:
+        tag_to_logfreq[t] = logfreq(tag_to_logfreq[t])
+    for freq in tag_to_logfreq.values():
+        if freq not in freq_to_ix: 
+            freq_to_ix[freq] = len(freq_to_ix)
+    return freq_to_ix, tag_to_logfreq
 
 def read_conllu(filename):
     """
@@ -111,7 +111,7 @@ def read_conllu(filename):
 
             if add_to_stack:
                 token_stack.append(rand_line[1].lower())
-                tag_stack.append(rand_line[4])
+                tag_stack.append(rand_line[3])
 
     return data
 
@@ -130,7 +130,6 @@ freq_to_ix, token_to_freq = get_freq2ix(training_data) #{"DET": logfreq(3), "NN"
 
 if __name__=="__main__":
     # Check that we don't crash on reading.
-    print(freq_to_ix)
-    print(token_to_freq)
+    _, tagcounter = get_tagfreq2ix(training_data)
     exit(0)
 
