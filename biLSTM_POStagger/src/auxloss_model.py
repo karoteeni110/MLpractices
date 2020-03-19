@@ -1,5 +1,5 @@
 """Reproducing the work from Plank et al. (2016)
-biLSTM tagger with auxilary loss
+biLSTM tagger with logfreq auxilary loss
 References: 
 1. https://pytorch.org/tutorials/beginner/nlp/sequence_models_tutorial.html 
 2. https://github.com/FraLotito/pytorch-partofspeech-tagger/blob/master/post.py """
@@ -10,14 +10,15 @@ import torch.optim as optim
 from torch.autograd import Variable
 from random import shuffle
 
-from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,tag_to_freq,\
+from data_ud import word_to_ix,byte_to_ix,char_to_ix,tag_to_ix,freq_to_ix,token_to_freq,\
                     training_data,dev_data,test_data
 from path import data_path
 
 torch.manual_seed(1)
-training_data = training_data[:12000]
+# training_data = training_data[:100]
+
 #--- hyperparameters ---
-save_modelname = 'de_auxloss_b+c.model'
+# save_modelname = 'de_auxloss_b+c.model'
 USE_WORD_EMB = False
 USE_BYTE_EMB = True
 USE_CHAR_EMB = True 
@@ -32,7 +33,7 @@ REPORT_EVERY = 5
 HIDDEN_DIM = 100
 
 def get_freq_targets_tensor(seq, to_ix=freq_to_ix):
-    idxs = [to_ix[tag_to_freq[t]] if tag_to_freq[t] in to_ix else to_ix['#UNK#'] for t in seq ]
+    idxs = [to_ix[token_to_freq[t]] if token_to_freq[t] in to_ix else to_ix['#UNK#'] for t in seq ]
     return torch.tensor(idxs, dtype=torch.long)
 
 def get_targets_tensor(seq, to_ix=tag_to_ix):
@@ -150,7 +151,7 @@ def evaluate(data,model):
             model.hidden = model.init_hidden()
             
             tag_targets = get_targets_tensor(tags)
-            freq_targets = get_freq_targets_tensor(tags)
+            freq_targets = get_freq_targets_tensor(sentence)
             tag_scores, freq_scores = model(sentence)        
 
             tag_preds = torch.argmax(tag_scores,dim=1)
@@ -170,12 +171,6 @@ if __name__ == "__main__":
     loss_function = nn.CrossEntropyLoss()
     optimizer = optim.SGD(model.parameters(), lr=LEARNING_RATE)
 
-    # See what the scores are before training
-    # with torch.no_grad():
-    #     sentence = training_data[0][0]
-    #     tag_scores = model(sentence)
-    #     print(tag_scores)
-
     for epoch in range(N_EPOCHS):
         total_loss = 0
         shuffle(training_data)
@@ -189,7 +184,7 @@ if __name__ == "__main__":
             # Get inputs ready for the network, that is, turn them into
             # Tensors of word indices.
             targets = get_targets_tensor(tags)
-            freq_targets = get_freq_targets_tensor(tags)
+            freq_targets = get_freq_targets_tensor(sentence)
 
             tag_scores, freq_scores = model(sentence)
 
@@ -211,21 +206,21 @@ if __name__ == "__main__":
             print('epoch: %d, loss: %.4f, train acc: %.2f%%, dev acc: %.2f%%' % 
                   (epoch+1, total_loss, train_mi_acc, dev_mi_acc))
 
-            checkpoint_fpath= data_path + '/EP%d_%s' % (epoch+1,save_modelname)
-            torch.save({
-            'epoch': epoch+1,
-            'model_state_dict': model.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': loss,
-            }, checkpoint_fpath)
-            print('Checkpoint saved:', checkpoint_fpath)
+            # checkpoint_fpath= data_path + '/EP%d_%s' % (epoch+1,save_modelname)
+            # torch.save({
+            # 'epoch': epoch+1,
+            # 'model_state_dict': model.state_dict(),
+            # 'optimizer_state_dict': optimizer.state_dict(),
+            # 'loss': loss,
+            # }, checkpoint_fpath)
+            # print('Checkpoint saved:', checkpoint_fpath)
 
     test_acc, _ = evaluate(test_data, model)
     print('test acc: %.2f%%' % (test_acc))
-    if save_modelname != '':
-        p = data_path + '/%s' % save_modelname
-        torch.save(model.state_dict(), p)
-        print('Model state:', p)
+    # if save_modelname != '':
+    #     p = data_path + '/%s' % save_modelname
+    #     torch.save(model.state_dict(), p)
+    #     print('Model state:', p)
     
     # with torch.no_grad():
     #     sent = training_data[0][0]
