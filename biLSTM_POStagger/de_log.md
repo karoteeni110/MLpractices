@@ -147,3 +147,13 @@ epoch: 20, loss: 168.5472, train acc: 99.83%, dev acc: 97.51%
 Checkpoint saved: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/EP20_de_auxloss_b+c.model
 test acc: 95.85%
 Model state: /Users/Karoteeni/coooode/MLpractices/biLSTM_POStagger/data/de_auxloss_b+c.model
+
+## de, aux loss, w+c
+epoch: 17, loss: 54.9406
+epoch: 18, loss: 49.8927
+epoch: 19, loss: 43.3559
+epoch: 20, loss: 37.2080
+epoch: 20, loss: 37.2080, train acc: 100.00%, dev acc: 94.30%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP20_de_auxloss_w+c.model
+test acc: 94.72%
+Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/de_auxloss_w+c.model

@@ -1,3 +1,13 @@
+## fi, w+c
+epoch: 17, loss: 433.7131
+epoch: 18, loss: 376.2107
+epoch: 19, loss: 373.7070
+epoch: 20, loss: 320.4751
+epoch: 20, loss: 320.4751, train acc: 99.07%, dev acc: 95.19%
+Checkpoint saved: /content/drive/My Drive/Colab Notebooks/biLSTM/data/EP20_fi_b+c.model
+test acc: 95.42%
+Model state: /content/drive/My Drive/Colab Notebooks/biLSTM/data/fi_b+c.model
+
 ## fi, w
 USE_WORD_EMB: True
 USE_BYTE_EMB: False
