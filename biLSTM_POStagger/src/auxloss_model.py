@@ -217,7 +217,8 @@ if __name__ == "__main__":
 
     test_acc, _ = evaluate(test_data, model)
     print('test acc: %.2f%%' % (test_acc))
-    # if save_modelname != '':
+
+    # if SAVE_MODEL:
     #     p = data_path + '/%s' % save_modelname
     #     torch.save(model.state_dict(), p)
     #     print('Model state:', p)
