@@ -20,7 +20,7 @@ def get_vanilla_acc(data):
         for t in tags:
             if t==MOST_FREQ_TAG:
                 correct += 1
-    return correct/total 
+    return correct/total *100
 
 if __name__ == "__main__":
     test_acc = get_vanilla_acc(test_data)
